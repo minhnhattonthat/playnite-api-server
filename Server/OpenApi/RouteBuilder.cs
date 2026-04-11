@@ -3,14 +3,15 @@ using System.Collections.Generic;
 namespace PlayniteApiServer.Server.OpenApi
 {
     /// <summary>
-    /// Fluent metadata builder returned by <see cref="Router.Add"/>. Each
-    /// method mutates the underlying <see cref="Route"/> and returns
+    /// Fluent metadata builder returned by <see cref="PlayniteApiServer.Server.Router.Add"/>.
+    /// Each method mutates the underlying <see cref="Route"/> and returns
     /// <c>this</c> so calls can be chained.
     ///
     /// Path parameters are auto-inferred at OpenAPI build time from
     /// <c>{name}</c> placeholders in the route's <see cref="Route.PathTemplate"/>.
-    /// Calling <see cref="PathParam"/> here only overrides the auto-inferred
-    /// entry to set a non-string type or a description.
+    /// Calling <see cref="PathParam"/> here re-declares a path parameter with
+    /// a non-string type or description; the OpenAPI builder prefers an
+    /// explicit entry over any auto-inferred one with the same name.
     /// </summary>
     internal sealed class RouteBuilder
     {
@@ -33,6 +34,7 @@ namespace PlayniteApiServer.Server.OpenApi
             return this;
         }
 
+        /// <summary>Sets (replaces, not appends) the OpenAPI tag list for this route.</summary>
         public RouteBuilder Tags(params string[] tags)
         {
             route.Tags = tags;
