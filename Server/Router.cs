@@ -12,7 +12,8 @@ namespace PlayniteApiServer.Server
 {
     /// <summary>
     /// Owns the dispatch table and per-request pipeline:
-    /// auth → route match → handler → exception translation.
+    /// route match → auth → handler → exception translation.
+    /// Routes flagged AllowAnonymous skip the auth + write-gate steps.
     /// The router reads the live PluginSettings on every request so that
     /// token and EnableWrites changes take effect without a listener restart.
     /// </summary>
