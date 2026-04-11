@@ -83,6 +83,20 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="assets\swagger-ui-dist\swagger-ui.css">
+      <LogicalName>swagger-ui.css</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="assets\swagger-ui-dist\swagger-ui-bundle.js">
+      <LogicalName>swagger-ui-bundle.js</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="assets\swagger-ui-dist\swagger-ui-standalone-preset.js">
+      <LogicalName>swagger-ui-standalone-preset.js</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="assets\swagger-ui-dist\index.html">
+      <LogicalName>index.html</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
     <None Include="extension.yaml">
       <CopyToOutputDirectory>PreserveNewestIfUpdated</CopyToOutputDirectory>
     </None>
