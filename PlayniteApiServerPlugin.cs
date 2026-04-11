@@ -129,6 +129,15 @@ namespace PlayniteApiServer
             }
         }
 
+        private static string PluginVersion()
+        {
+            var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            // OpenAPI version field expects a semver-like string. Trim to
+            // major.minor.patch (the AssemblyVersion fourth component is the
+            // build number, not part of semver).
+            return v == null ? "0.0.0" : v.ToString(3);
+        }
+
         private Router BuildRouter()
         {
             var db = PlayniteApi.Database;
@@ -140,7 +149,7 @@ namespace PlayniteApiServer
             var health = new HealthController(db);
             router.Add("GET", "/health", health.Get)
                 .Summary("Health check")
-                .Tags("system")
+                .Tags("health")
                 .Description("Returns the plugin version and a count of every database collection.")
                 .Response(200, "Server is running");
 
@@ -212,8 +221,10 @@ namespace PlayniteApiServer
 
             // ─── Documentation routes ──────────────────────────────────────
             // Build the OpenAPI document NOW (after all data routes are registered)
-            // and capture the JSON in a closure for the handler.
-            var openApiJson = OpenApiBuilder.Build(router.Routes, "Playnite API Server", "0.1.0");
+            // and capture the JSON in a closure for the handler. Each call to
+            // BuildRouter produces an independent openApiJson binding;
+            // RestartServer discards the old router so this stays correct.
+            var openApiJson = OpenApiBuilder.Build(router.Routes, "Playnite API Server", PluginVersion());
 
             router.Add("GET", "/openapi.json", r => OpenApiHandler.Serve(r, openApiJson))
                 .AllowAnonymous();
