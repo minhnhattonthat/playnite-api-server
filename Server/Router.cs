@@ -44,20 +44,13 @@ namespace PlayniteApiServer.Server
 
             try
             {
-                // 1. Bearer auth — constant-time compare.
-                var expected = settings.Token ?? "";
-                var provided = ExtractBearerToken(req);
-                if (string.IsNullOrEmpty(expected) || !TokenGen.ConstantTimeEquals(provided, expected))
-                {
-                    resp.AddHeader("WWW-Authenticate", "Bearer");
-                    WriteError(resp, 401, "unauthorized", "Missing or invalid bearer token.");
-                    return;
-                }
-
-                // 2. Route match.
                 var pathSegments = SplitPath(req.Url.AbsolutePath);
-                Route matchedOnPath = null;
-                Dictionary<string, string> pathVars = null;
+
+                // 1. Walk the route table looking for a matching path. Track both
+                //    the first method-match and any path-only match (for the 405).
+                Route methodMatch = null;
+                Dictionary<string, string> methodMatchVars = null;
+                Route pathOnlyMatch = null;
 
                 foreach (var route in routes)
                 {
@@ -68,31 +61,29 @@ namespace PlayniteApiServer.Server
 
                     if (string.Equals(route.Method, req.HttpMethod, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Write-gate: non-GET requires EnableWrites.
-                        if (!settings.EnableWrites && !IsReadMethod(route.Method))
-                        {
-                            WriteError(resp, 403, "writes_disabled", "Write operations are disabled in plugin settings.");
-                            return;
-                        }
-
-                        var query = ParseQueryString(req.Url.Query);
-                        var ctx = new RequestContext(http, vars, query);
-                        route.Handler(ctx);
-                        return;
+                        methodMatch = route;
+                        methodMatchVars = vars;
+                        break;
                     }
 
-                    if (matchedOnPath == null)
+                    if (pathOnlyMatch == null)
                     {
-                        matchedOnPath = route;
-                        pathVars = vars;
+                        pathOnlyMatch = route;
                     }
                 }
 
-                if (matchedOnPath != null)
+                // 2. No path match at all → 404 (no auth check; nothing to protect).
+                if (methodMatch == null && pathOnlyMatch == null)
                 {
-                    // 405: path matched, method did not — assemble Allow header.
+                    WriteError(resp, 404, "not_found", "No route matches " + req.HttpMethod + " " + req.Url.AbsolutePath + ".");
+                    return;
+                }
+
+                // 3. Path matched but method did not → 405 with Allow header.
+                if (methodMatch == null)
+                {
                     var allowed = routes
-                        .Where(r => SegmentsEqual(r.Segments, matchedOnPath.Segments))
+                        .Where(r => SegmentsEqual(r.Segments, pathOnlyMatch.Segments))
                         .Select(r => r.Method.ToUpperInvariant())
                         .Distinct()
                         .ToArray();
@@ -101,7 +92,29 @@ namespace PlayniteApiServer.Server
                     return;
                 }
 
-                WriteError(resp, 404, "not_found", "No route matches " + req.HttpMethod + " " + req.Url.AbsolutePath + ".");
+                // 4. Auth + write-gate, skipped for anonymous routes.
+                if (!methodMatch.AllowAnonymous)
+                {
+                    var expected = settings.Token ?? "";
+                    var provided = ExtractBearerToken(req);
+                    if (string.IsNullOrEmpty(expected) || !TokenGen.ConstantTimeEquals(provided, expected))
+                    {
+                        resp.AddHeader("WWW-Authenticate", "Bearer");
+                        WriteError(resp, 401, "unauthorized", "Missing or invalid bearer token.");
+                        return;
+                    }
+
+                    if (!settings.EnableWrites && !IsReadMethod(methodMatch.Method))
+                    {
+                        WriteError(resp, 403, "writes_disabled", "Write operations are disabled in plugin settings.");
+                        return;
+                    }
+                }
+
+                // 5. Invoke handler.
+                var query = ParseQueryString(req.Url.Query);
+                var ctx = new RequestContext(http, methodMatchVars, query);
+                methodMatch.Handler(ctx);
             }
             catch (ApiException apiEx)
             {
