@@ -64,7 +64,7 @@ namespace PlayniteApiServer.Controllers
             { "added",                      FieldShape.DateTimeNullable("When the game was added to the library (ISO 8601)") },
             { "modified",                   FieldShape.DateTimeNullable("When the game was last modified (ISO 8601)") },
             { "lastActivity",               FieldShape.DateTimeNullable("When the game was last played (ISO 8601)") },
-            { "releaseDate",                FieldShape.Str("Release date as YYYY-MM-DD") },
+            { "releaseDate",                FieldShape.Str("Release date — nested object {year, month, day}; see Game schema for the full shape. Patching this field is discouraged in v1.") },
 
             // Scores
             { "userScore",                  FieldShape.IntNullable("User score 0–100") },

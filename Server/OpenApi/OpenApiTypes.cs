@@ -58,6 +58,6 @@ namespace PlayniteApiServer.Server.OpenApi
         public static FieldShape Long(string description = null) => new FieldShape { Type = "integer", Format = "int64", Description = description };
         public static FieldShape LongNullable(string description = null) => new FieldShape { Type = "integer", Format = "int64", Nullable = true, Description = description };
         public static FieldShape DateTimeNullable(string description = null) => new FieldShape { Type = "string", Format = "date-time", Nullable = true, Description = description };
-        public static FieldShape UuidArray(string description = null) => new FieldShape { Type = "array", ItemType = "string", ItemFormat = "uuid", Description = description };
+        public static FieldShape UuidArray(string description = null) => new FieldShape { Type = "array", ItemType = "string", ItemFormat = "uuid", Nullable = true, Description = description };
     }
 }
