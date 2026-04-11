@@ -30,7 +30,7 @@ namespace PlayniteApiServer.Server
         public void Add(string method, string pathPattern, Action<RequestContext> handler)
         {
             var segments = SplitPath(pathPattern);
-            routes.Add(new Route(method, segments, handler));
+            routes.Add(new Route(method, segments, handler, pathPattern));
         }
 
         public void Dispatch(HttpListenerContext http)
