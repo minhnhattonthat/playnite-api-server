@@ -1,0 +1,7 @@
+Id: PlayniteApiServer_0a96c485-030a-4178-9c6c-6a9098fac2d5
+Name: Playnite API Server
+Author: Nathan
+Version: 0.1.0
+Module: PlayniteApiServer.dll
+Type: GenericPlugin
+Icon: icon.png
