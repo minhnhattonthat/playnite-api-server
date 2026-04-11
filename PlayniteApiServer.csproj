@@ -73,6 +73,7 @@
     <Compile Include="Server\OpenApi\OpenApiSchemas.cs" />
     <Compile Include="Server\OpenApi\OpenApiBuilder.cs" />
     <Compile Include="Server\OpenApi\OpenApiHandler.cs" />
+    <Compile Include="Server\OpenApi\SwaggerUiHandler.cs" />
     <Compile Include="Controllers\LookupController.cs" />
     <Compile Include="Controllers\GamesController.cs" />
     <Compile Include="Controllers\MediaController.cs" />
