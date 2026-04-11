@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Web;
 using Playnite.SDK;
+using PlayniteApiServer.Server.OpenApi;
 using PlayniteApiServer.Settings;
 
 namespace PlayniteApiServer.Server
@@ -27,10 +28,12 @@ namespace PlayniteApiServer.Server
             this.settingsAccessor = settingsAccessor;
         }
 
-        public void Add(string method, string pathPattern, Action<RequestContext> handler)
+        public RouteBuilder Add(string method, string pathPattern, Action<RequestContext> handler)
         {
             var segments = SplitPath(pathPattern);
-            routes.Add(new Route(method, segments, handler, pathPattern));
+            var route = new Route(method, segments, handler, pathPattern);
+            routes.Add(route);
+            return new RouteBuilder(route);
         }
 
         public void Dispatch(HttpListenerContext http)
