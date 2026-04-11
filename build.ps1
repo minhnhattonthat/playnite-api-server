@@ -45,10 +45,8 @@ function Find-MsBuild {
         $installPath = & $vswhere -latest -requires Microsoft.Component.MSBuild `
             -property installationPath -format value 2>$null
         if ($installPath) {
-            $candidates += @(
-                Join-Path $installPath 'MSBuild\Current\Bin\MSBuild.exe',
-                Join-Path $installPath 'MSBuild\15.0\Bin\MSBuild.exe'
-            )
+            $candidates += (Join-Path $installPath 'MSBuild\Current\Bin\MSBuild.exe')
+            $candidates += (Join-Path $installPath 'MSBuild\15.0\Bin\MSBuild.exe')
         }
     }
 
