@@ -22,6 +22,7 @@ namespace PlayniteApiServer.Server
         private static readonly ILogger logger = LogManager.GetLogger();
 
         private readonly List<Route> routes = new List<Route>();
+        public IReadOnlyList<Route> Routes => routes;
         private readonly Func<PluginSettings> settingsAccessor;
 
         public Router(Func<PluginSettings> settingsAccessor)
