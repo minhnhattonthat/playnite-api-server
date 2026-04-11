@@ -70,6 +70,7 @@
     <Compile Include="Server\TokenGen.cs" />
     <Compile Include="Server\OpenApi\OpenApiTypes.cs" />
     <Compile Include="Server\OpenApi\RouteBuilder.cs" />
+    <Compile Include="Server\OpenApi\OpenApiSchemas.cs" />
     <Compile Include="Controllers\LookupController.cs" />
     <Compile Include="Controllers\GamesController.cs" />
     <Compile Include="Controllers\MediaController.cs" />
