@@ -218,22 +218,18 @@ namespace PlayniteApiServer.Server.OpenApi
 
         private static JObject BuildResponses(Route route)
         {
-            var responses = new JObject();
-
-            // Sort declared responses by status code for stable output.
-            var declared = route.Responses ?? new List<OpenApiResponse>();
-            foreach (var r in declared.OrderBy(x => x.Status))
-            {
-                responses[r.Status.ToString()] = BuildResponse(r);
-            }
+            // Build the working list first so the auto-401 (if needed) gets
+            // sorted into numeric order alongside the declared responses,
+            // not appended after the sort.
+            var declared = route.Responses != null
+                ? new List<OpenApiResponse>(route.Responses)
+                : new List<OpenApiResponse>();
 
             // Auto-add a 401 if the route is non-anonymous and the author
-            // didn't declare one explicitly. JObject indexed by a missing
-            // key returns null in Newtonsoft.Json 10.0 (the version Playnite
-            // ships with), which doesn't expose JObject.ContainsKey directly.
-            if (!route.AllowAnonymous && responses["401"] == null)
+            // didn't declare one explicitly.
+            if (!route.AllowAnonymous && !declared.Any(r => r.Status == 401))
             {
-                responses["401"] = BuildResponse(new OpenApiResponse
+                declared.Add(new OpenApiResponse
                 {
                     Status = 401,
                     Description = "Missing or invalid bearer token",
@@ -242,6 +238,11 @@ namespace PlayniteApiServer.Server.OpenApi
                 });
             }
 
+            var responses = new JObject();
+            foreach (var r in declared.OrderBy(x => x.Status))
+            {
+                responses[r.Status.ToString()] = BuildResponse(r);
+            }
             return responses;
         }
 
