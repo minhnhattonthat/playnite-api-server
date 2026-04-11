@@ -228,7 +228,9 @@ namespace PlayniteApiServer.Server.OpenApi
             }
 
             // Auto-add a 401 if the route is non-anonymous and the author
-            // didn't declare one explicitly.
+            // didn't declare one explicitly. JObject indexed by a missing
+            // key returns null in Newtonsoft.Json 10.0 (the version Playnite
+            // ships with), which doesn't expose JObject.ContainsKey directly.
             if (!route.AllowAnonymous && responses["401"] == null)
             {
                 responses["401"] = BuildResponse(new OpenApiResponse
