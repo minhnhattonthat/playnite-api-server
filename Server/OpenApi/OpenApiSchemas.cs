@@ -60,6 +60,14 @@ namespace PlayniteApiServer.Server.OpenApi
             },
         };
 
+        // Fields whose schema is hand-rendered by the explicit overrides at
+        // the bottom of Game() instead of going through ShapeToJson. Adding
+        // a key here means you must also add a corresponding override line.
+        // Today: only releaseDate, because Playnite's ReleaseDate is a
+        // nested struct (year, month, day) rather than a scalar.
+        private static readonly HashSet<string> ExplicitOverrides =
+            new HashSet<string>(System.StringComparer.OrdinalIgnoreCase) { "releaseDate" };
+
         private static JObject Game()
         {
             var properties = new JObject();
@@ -68,17 +76,22 @@ namespace PlayniteApiServer.Server.OpenApi
             // responses but are not in AllowedPatchFields.
             properties["id"] = StringProp("Server-assigned uuid", format: "uuid");
 
-            // Walk the patch allow-list. The Dictionary preserves insertion
-            // order (Newtonsoft does too), so the schema field order matches
-            // the declaration order in GamesController.
+            // Walk the patch allow-list, skipping any key that has an
+            // explicit hand-rendered override below. The Dictionary preserves
+            // insertion order (Newtonsoft does too), so the schema field
+            // order matches the declaration order in GamesController.
             foreach (var kvp in GamesController.AllowedPatchFields)
             {
+                if (ExplicitOverrides.Contains(kvp.Key))
+                {
+                    continue;
+                }
                 properties[kvp.Key] = ShapeToJson(kvp.Value);
             }
 
-            // Special case: releaseDate is a Playnite ReleaseDate? struct,
-            // not a string. The Dictionary entry uses FieldShape.Str only as
-            // a placeholder; render the real nested-object schema here.
+            // Explicit override: ReleaseDate is a struct, not a string.
+            // If you delete this line, releaseDate will be missing from
+            // the schema (the loop above skips it).
             properties["releaseDate"] = ReleaseDateSchema();
 
             return new JObject
@@ -94,7 +107,7 @@ namespace PlayniteApiServer.Server.OpenApi
         {
             ["type"] = "object",
             ["nullable"] = true,
-            ["description"] = "Playnite's ReleaseDate struct. Pass the year/month/day fields to set; null to clear.",
+            ["description"] = "Playnite's ReleaseDate struct. Pass year/month/day to set; null to clear. Responses also include a computed 'date' (ISO 8601) derived by the SDK; not listed here because the schema's 'additionalProperties: true' on Game already permits it.",
             ["properties"] = new JObject
             {
                 ["year"]  = new JObject { ["type"] = "integer", ["description"] = "Four-digit year" },
@@ -131,6 +144,10 @@ namespace PlayniteApiServer.Server.OpenApi
             },
         };
 
+        // NamedItem and Platform mirror Game's additionalProperties=true:
+        // the Playnite SDK exposes more fields on each lookup type than
+        // we hand-author here, and we don't want to surface conformance
+        // errors when the SDK adds a new field.
         private static JObject NamedItem() => new JObject
         {
             ["type"] = "object",
