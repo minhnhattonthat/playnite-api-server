@@ -159,9 +159,33 @@ namespace PlayniteApiServer
             router.Add("GET", "/games", games.List)
                 .Summary("List games")
                 .Tags("games")
+                // pagination (existing)
                 .QueryParam("offset", "integer", "Pagination offset (default 0)")
                 .QueryParam("limit",  "integer", "Page size (default 100, max 1000)")
                 .QueryParam("q",      "string",  "Substring filter on Name (case-insensitive)")
+                // boolean filters
+                .QueryParam("isInstalled", "boolean", "Filter by install state")
+                .QueryParam("favorite",    "boolean", "Filter by favorite flag")
+                .QueryParam("hidden",      "boolean", "Filter by hidden flag. Omit to include all.")
+                // single-ID filters
+                .QueryParam("sourceId",           "string", "GameSource id (uuid)")
+                .QueryParam("completionStatusId", "string", "CompletionStatus id (uuid)")
+                // multi-ID filters (match-any)
+                .QueryParam("platformIds",  "string", "Comma-separated platform uuids — match-any (OR)")
+                .QueryParam("genreIds",     "string", "Comma-separated genre uuids — match-any (OR)")
+                .QueryParam("developerIds", "string", "Comma-separated developer (Company) uuids — match-any (OR)")
+                .QueryParam("publisherIds", "string", "Comma-separated publisher (Company) uuids — match-any (OR)")
+                .QueryParam("categoryIds",  "string", "Comma-separated category uuids — match-any (OR)")
+                .QueryParam("tagIds",       "string", "Comma-separated tag uuids — match-any (OR)")
+                .QueryParam("featureIds",   "string", "Comma-separated feature uuids — match-any (OR)")
+                // ranges
+                .QueryParam("playtimeMin",        "integer", "Minimum total play time in seconds (inclusive)")
+                .QueryParam("playtimeMax",        "integer", "Maximum total play time in seconds (inclusive)")
+                .QueryParam("userScoreMin",       "integer", "Minimum user score 0-100 (inclusive)")
+                .QueryParam("lastActivityAfter",  "string",  "ISO 8601 date or datetime (inclusive)")
+                .QueryParam("lastActivityBefore", "string",  "ISO 8601 date or datetime (inclusive)")
+                // sort
+                .QueryParam("sort", "string", "Sort field. Prefix with '-' for descending. Default 'name'. Allowed: name, added, modified, lastActivity, releaseDate, playtime, playCount, userScore, communityScore, criticScore")
                 .Response(200, "Paged list of games", OpenApiSchemas.Schemas.GamePage);
 
             router.Add("POST", "/games", games.Create)

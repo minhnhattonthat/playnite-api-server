@@ -76,6 +76,9 @@
     <Compile Include="Server\OpenApi\SwaggerUiHandler.cs" />
     <Compile Include="Controllers\LookupController.cs" />
     <Compile Include="Controllers\GamesController.cs" />
+    <Compile Include="Controllers\GamesQuery.cs" />
+    <Compile Include="Controllers\GamesQueryFilter.cs" />
+    <Compile Include="Controllers\GamesQuerySort.cs" />
     <Compile Include="Controllers\MediaController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Dto\NamedDto.cs" />
