@@ -105,36 +105,24 @@ namespace PlayniteApiServer.Controllers
 
         public void List(RequestContext r)
         {
-            var offset = GetInt(r.Query, "offset", 0);
-            var limit = GetInt(r.Query, "limit", 100);
-            if (offset < 0) offset = 0;
-            if (limit <= 0) limit = 100;
-            if (limit > 1000) limit = 1000;
-
-            r.Query.TryGetValue("q", out var q);
+            var q = GamesQuery.Parse(r.Query);
 
             IEnumerable<Game> source = db.Games.Cast<Game>();
-            if (!string.IsNullOrWhiteSpace(q))
-            {
-                var needle = q.Trim();
-                source = source.Where(g => g.Name != null &&
-                    g.Name.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0);
-            }
-
+            source = GamesQueryFilter.Apply(source, q);
             var materialized = source.ToList();
+
             var total = materialized.Count;
 
-            var page = materialized
-                .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
-                .Skip(offset)
-                .Take(limit)
+            var page = GamesQuerySort.Apply(materialized, q)
+                .Skip(q.Offset)
+                .Take(q.Limit)
                 .ToList();
 
             r.WriteJson(200, new
             {
                 total,
-                offset,
-                limit,
+                offset = q.Offset,
+                limit = q.Limit,
                 items = page,
             });
         }
@@ -262,15 +250,6 @@ namespace PlayniteApiServer.Controllers
                     throw new ApiException(409, fieldName + " references unknown id: " + id);
                 }
             }
-        }
-
-        private static int GetInt(Dictionary<string, string> query, string key, int defaultValue)
-        {
-            if (query.TryGetValue(key, out var raw) && int.TryParse(raw, out var parsed))
-            {
-                return parsed;
-            }
-            return defaultValue;
         }
 
         private TResult InvokeOnUi<TResult>(Func<TResult> fn)
