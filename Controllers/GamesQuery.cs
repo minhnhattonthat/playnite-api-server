@@ -111,6 +111,15 @@ namespace PlayniteApiServer.Controllers
             q.LastActivityAfter = ParseDateTimeNullable(query, "lastActivityAfter");
             q.LastActivityBefore = ParseDateTimeNullable(query, "lastActivityBefore");
 
+            // UserScoreMin is a 0-100 integer per spec §4.5; reject values
+            // outside that range rather than silently returning zero matches.
+            if (q.UserScoreMin.HasValue && (q.UserScoreMin.Value < 0 || q.UserScoreMin.Value > 100))
+            {
+                throw new ApiException(400,
+                    "Invalid value for 'userScoreMin' (" + q.UserScoreMin.Value +
+                    "). Expected an integer between 0 and 100 inclusive.");
+            }
+
             // Range consistency (inclusive bounds; min > max is an error)
             if (q.PlaytimeMin.HasValue && q.PlaytimeMax.HasValue && q.PlaytimeMin.Value > q.PlaytimeMax.Value)
             {

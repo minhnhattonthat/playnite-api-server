@@ -32,15 +32,17 @@ namespace PlayniteApiServer.Controllers
             }
 
             // ── 2. Single-ID filters (O(1) per game) ────────────────────
+            // Games whose relationship id is Guid.Empty are "unset" — never
+            // match per spec §4.3 / §6 (null-fails-positive).
             if (q.SourceId.HasValue)
             {
                 var v = q.SourceId.Value;
-                source = source.Where(g => g.SourceId == v);
+                source = source.Where(g => g.SourceId != System.Guid.Empty && g.SourceId == v);
             }
             if (q.CompletionStatusId.HasValue)
             {
                 var v = q.CompletionStatusId.Value;
-                source = source.Where(g => g.CompletionStatusId == v);
+                source = source.Where(g => g.CompletionStatusId != System.Guid.Empty && g.CompletionStatusId == v);
             }
 
             // ── 3. Range filters ────────────────────────────────────────

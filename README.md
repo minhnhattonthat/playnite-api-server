@@ -16,7 +16,7 @@ A [Playnite](https://playnite.link/) generic plugin that exposes your local game
 
 ## Features
 
-- **REST API over HTTPListener**, runs inside the Playnite process — no external daemon, no NuGet/ASP.NET
+- **REST API over HttpListener**, runs inside the Playnite process — no external daemon, no NuGet/ASP.NET
 - **Games CRUD** with paginated listing, substring search, JSON-merge PATCH, foreign-key validation
 - **12 lookup collections** with full CRUD (platforms, genres, companies, features, categories, tags, series, age ratings, regions, sources, completion statuses, emulators)
 - **Game media endpoint** that streams icon / cover / background image bytes

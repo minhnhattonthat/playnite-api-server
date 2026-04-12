@@ -296,9 +296,10 @@ public void List(RequestContext r)
 }
 ```
 
-The legacy `GetInt` helper local to `GamesController` can stay; it's still
-used by the Patch/Delete id parsing paths. The new parsing helpers live in
-`GamesQuery.Parse`.
+The legacy `GetInt` helper local to `GamesController` is removed in this
+change; it was only used by `List`, not by Patch/Delete (those parse ids
+via `HttpExtensions.ParseGuidOrThrow`). The new query-string parsing
+helpers live in `GamesQuery.Parse`.
 
 **`PlayniteApiServerPlugin.cs:BuildRouter`** — the `router.Add("GET",
 "/games", games.List)` block gains 18 new `.QueryParam(...)` calls plus a
