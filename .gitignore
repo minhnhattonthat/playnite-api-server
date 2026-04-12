@@ -12,3 +12,8 @@ Desktop.ini
 
 .claude
 /tools
+
+# Python bytecode from the integration test suite under tests/
+__pycache__/
+*.pyc
+.pytest_cache/
