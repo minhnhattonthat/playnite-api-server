@@ -27,8 +27,9 @@ namespace PlayniteApiServer.Controllers
     /// <summary>
     /// Parsed and validated query parameters for GET /games. Built once per
     /// request via <see cref="Parse"/>; consumed by GamesQueryFilter and
-    /// GamesQuerySort. Every filter is nullable (or an empty list) so the
-    /// "no filter applied" state is explicit.
+    /// GamesQuerySort. Scalar filters are nullable; multi-ID list filters
+    /// are null when absent (never an empty list), so the "no filter applied"
+    /// state is explicit on both.
     /// </summary>
     internal sealed class GamesQuery
     {
@@ -71,6 +72,8 @@ namespace PlayniteApiServer.Controllers
             var q = new GamesQuery();
 
             // ── Pagination ──────────────────────────────────────────────
+            // Pagination values are clamped silently (spec §4.1), unlike
+            // other invalid inputs which fail the whole request.
             q.Offset = ParseIntWithDefault(query, "offset", 0);
             if (q.Offset < 0) q.Offset = 0;
 
@@ -124,7 +127,8 @@ namespace PlayniteApiServer.Controllers
             }
 
             // ── Sort ────────────────────────────────────────────────────
-            ParseSort(query, q);
+            q.SortField = ParseSortField(query, out var descending);
+            q.SortDescending = descending;
 
             return q;
         }
@@ -242,47 +246,44 @@ namespace PlayniteApiServer.Controllers
             return v;
         }
 
-        private static void ParseSort(Dictionary<string, string> query, GamesQuery q)
+        private static SortField ParseSortField(Dictionary<string, string> query, out bool descending)
         {
-            // Missing sort → default (name ascending).
+            descending = false;
+
             if (!query.TryGetValue("sort", out var raw))
             {
-                q.SortField = SortField.Name;
-                q.SortDescending = false;
-                return;
+                return SortField.Name;
             }
             if (string.IsNullOrEmpty(raw))
             {
                 throw new ApiException(400, "Empty value for 'sort'.");
             }
 
-            bool desc = false;
             var field = raw;
             if (field.StartsWith("-", StringComparison.Ordinal))
             {
-                desc = true;
+                descending = true;
                 field = field.Substring(1);
             }
 
             switch (field.ToLowerInvariant())
             {
-                case "name":           q.SortField = SortField.Name; break;
-                case "added":          q.SortField = SortField.Added; break;
-                case "modified":       q.SortField = SortField.Modified; break;
-                case "lastactivity":   q.SortField = SortField.LastActivity; break;
-                case "releasedate":    q.SortField = SortField.ReleaseDate; break;
-                case "playtime":       q.SortField = SortField.Playtime; break;
-                case "playcount":      q.SortField = SortField.PlayCount; break;
-                case "userscore":      q.SortField = SortField.UserScore; break;
-                case "communityscore": q.SortField = SortField.CommunityScore; break;
-                case "criticscore":    q.SortField = SortField.CriticScore; break;
+                case "name":           return SortField.Name;
+                case "added":          return SortField.Added;
+                case "modified":       return SortField.Modified;
+                case "lastactivity":   return SortField.LastActivity;
+                case "releasedate":    return SortField.ReleaseDate;
+                case "playtime":       return SortField.Playtime;
+                case "playcount":      return SortField.PlayCount;
+                case "userscore":      return SortField.UserScore;
+                case "communityscore": return SortField.CommunityScore;
+                case "criticscore":    return SortField.CriticScore;
                 default:
                     throw new ApiException(400,
                         "Unknown sort field '" + field + "'. Allowed: name, added, modified, " +
                         "lastActivity, releaseDate, playtime, playCount, userScore, " +
                         "communityScore, criticScore.");
             }
-            q.SortDescending = desc;
         }
     }
 }
