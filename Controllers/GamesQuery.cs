@@ -228,6 +228,14 @@ namespace PlayniteApiServer.Controllers
                 result.Add(g);
                 idx++;
             }
+            // Present-but-blank (e.g. "," or "  ,  ") is treated the same as
+            // the string.IsNullOrEmpty(raw) case above — a spec §5 empty
+            // value. Silently returning an empty list would skip the filter
+            // and surprise the caller.
+            if (result.Count == 0)
+            {
+                throw new ApiException(400, "Empty value for '" + name + "'.");
+            }
             return result;
         }
 
