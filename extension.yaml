@@ -1,7 +1,10 @@
-Id: PlayniteApiServer_0a96c485-030a-4178-9c6c-6a9098fac2d5
+Id: PlayniteApiServer
 Name: Playnite API Server
-Author: Nathan
+Author: Nathan Ton
 Version: 0.1.0
 Module: PlayniteApiServer.dll
 Type: GenericPlugin
 Icon: icon.png
+Links:
+    - Name: GitHub
+      Url: https://github.com/minhnhattonthat/playnite-api-server

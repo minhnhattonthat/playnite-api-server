@@ -153,7 +153,7 @@ Tighten further with [Tailscale ACLs](https://tailscale.com/kb/1018/acls) — yo
 If you want the listener itself to bind to your LAN IP, a Tailscale IP, or `0.0.0.0`, you have to change `BindAddress` manually. The settings UI does not expose it.
 
 1. **Close Playnite.**
-2. Find the plugin's saved settings file. Playnite stores plugin config under `%APPDATA%\Playnite\ExtensionsData\PlayniteApiServer_0a96c485-030a-4178-9c6c-6a9098fac2d5\config.json` for standard installs (or `<Playnite>\ExtensionsData\...` for portable installs).
+2. Find the plugin's saved settings file. Playnite stores plugin config under `%APPDATA%\Playnite\ExtensionsData\PlayniteApiServer\config.json` for standard installs (or `<Playnite>\ExtensionsData\...` for portable installs).
 3. Edit the JSON:
 
    ```json

@@ -29,7 +29,7 @@ Set-StrictMode -Version Latest
 
 $ProjectRoot  = Split-Path -Parent $PSCommandPath
 $Project      = Join-Path $ProjectRoot 'PlayniteApiServer.csproj'
-$ExtensionId  = 'PlayniteApiServer_0a96c485-030a-4178-9c6c-6a9098fac2d5'
+$ExtensionId  = 'PlayniteApiServer'
 $DeployTarget = Join-Path 'H:\Playnite\Extensions' $ExtensionId
 
 function Find-MsBuild {
