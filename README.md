@@ -204,6 +204,53 @@ This is more fragile than Option A because you now have to think about URL ACLs,
 | `/docs` loads but asset files 404 | The plugin DLL didn't fully deploy. Rebuild with `./build.ps1` with Playnite closed. |
 | Browser shows cert warning via `tailscale serve` | First-time cert issuance can take ~30 seconds. Refresh. |
 
+## Testing
+
+An end-to-end integration test suite lives in `tests/`. It runs HTTP requests against a live Playnite instance with the plugin loaded — there are no unit tests because `IPlayniteAPI.Database` only exists when Playnite is running.
+
+**Setup (one-time):**
+
+```bash
+pip install -r tests/requirements.txt
+```
+
+**Run:**
+
+1. Start Playnite so the plugin loads and the listener binds.
+2. Make sure **Enable write operations** is ON in the plugin settings (the CRUD tests skip gracefully when it's off, but you get more coverage with it on).
+3. Run from the repo root:
+
+   **bash / Git Bash:**
+   ```bash
+   export PLAYNITE_API_BASE="http://127.0.0.1:8083"
+   export PLAYNITE_API_TOKEN="<paste from plugin settings>"
+   pytest tests/ -v
+   ```
+
+   **PowerShell:**
+   ```powershell
+   $env:PLAYNITE_API_BASE = "http://127.0.0.1:8083"
+   $env:PLAYNITE_API_TOKEN = "<paste from plugin settings>"
+   pytest tests\ -v
+   ```
+
+Run a single file: `pytest tests/test_games_list.py -v`
+Run a single test: `pytest tests/test_games_list.py::test_unknown_sort_field -v`
+
+**What it covers (63 tests, ~3 seconds):**
+
+| File | Covers |
+|---|---|
+| `test_health.py` | `GET /health` shape + auth gate |
+| `test_auth.py` | Bearer missing/wrong → 401; unknown path → 404; wrong method → 405 |
+| `test_docs.py` | `/docs` + `/openapi.json` + Swagger UI assets load anonymously |
+| `test_openapi.py` | Spec is OpenAPI 3.0.3 with expected schemas, paths, and security scoping |
+| `test_games_list.py` | All 18 filters + sort + every `400` error shape from spec §5 |
+| `test_games_crud.py` | `POST → GET → PATCH → DELETE` lifecycle + field/FK validation |
+| `test_lookups.py` | Same CRUD lifecycle against `/tags` (covers all 12 lookup collections) |
+
+Tests that create data prefix every name with `__test__` and clean up in teardown. A session-start cleanup pass also deletes leftovers from aborted previous runs. See [`tests/README.md`](./tests/README.md) for details and known limitations.
+
 ## Development
 
 See [`CLAUDE.md`](./CLAUDE.md) for the architectural overview and contribution notes, and [`docs/superpowers/specs/`](./docs/superpowers/specs/) for the design spec that drove the current implementation.
