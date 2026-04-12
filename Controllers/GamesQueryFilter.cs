@@ -71,6 +71,9 @@ namespace PlayniteApiServer.Controllers
             }
 
             // ── 4. Multi-ID filters (match-any OR) ──────────────────────
+            // List.Contains is O(K) per lookup, but filter lists are
+            // typically 1-3 items; a HashSet swap is trivial if larger
+            // lists become common.
             if (q.PlatformIds != null && q.PlatformIds.Count > 0)
             {
                 var set = q.PlatformIds;
