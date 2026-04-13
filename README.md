@@ -115,10 +115,12 @@ PATCH on `/games/{id}` accepts a subset of Game fields. The full writable allow-
 
 ## Security model
 
-- **Loopback-only by default.** The listener binds `127.0.0.1:8083` until you change it.
+- **Loopback-only by default.** The listener binds `127.0.0.1:8083` until you change it. When bound to loopback, requests with a non-loopback `Host` header are rejected (defense against DNS-rebinding attacks).
 - **Bearer token required on every endpoint except `/docs`, `/openapi.json`, and the Swagger UI asset files.** Missing or wrong token → `401`. The token is compared in constant time.
 - **Write-gate.** `POST`, `PATCH`, and `DELETE` all check the `EnableWrites` setting independently of auth. Flip it off for read-only mode without regenerating the token.
 - **Docs are anonymous on purpose.** The whole point of `/docs` is that a browser can load it without fussing over headers. It advertises the `bearerAuth` scheme so the Swagger UI Authorize button lights up. The docs don't leak any data — they describe the API surface, which is already visible to anyone who can reach the port.
+
+> ⚠️ **A valid bearer token with writes enabled is effectively remote code execution.** `PATCH /games/{id}` accepts `preScript`, `postScript`, and `gameStartedScript` — Playnite runs those as PowerShell the next time the user launches (or closes) that game. An attacker who holds a read-write token can overwrite any game's script fields and wait. Treat the token as RCE-equivalent: never paste it into an untrusted channel, rotate it if in doubt, and turn `EnableWrites` off whenever the client devices don't need to mutate the library.
 
 ## Remote access
 

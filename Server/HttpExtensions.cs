@@ -45,9 +45,25 @@ namespace PlayniteApiServer.Server
             }
 
             var encoding = req.ContentEncoding ?? Encoding.UTF8;
-            using (var reader = new StreamReader(req.InputStream, encoding))
+
+            // Read into a bounded buffer rather than trusting ContentLength64:
+            // chunked-transfer requests report -1 and would bypass the fast
+            // path above if we used StreamReader.ReadToEnd.
+            using (var buffer = new MemoryStream())
             {
-                return reader.ReadToEnd();
+                var chunk = new byte[8 * 1024];
+                long total = 0;
+                int read;
+                while ((read = req.InputStream.Read(chunk, 0, chunk.Length)) > 0)
+                {
+                    total += read;
+                    if (total > MaxRequestBodyBytes)
+                    {
+                        throw new ApiException(413, "Request body exceeds 8 MiB limit.");
+                    }
+                    buffer.Write(chunk, 0, read);
+                }
+                return encoding.GetString(buffer.GetBuffer(), 0, (int)buffer.Length);
             }
         }
 

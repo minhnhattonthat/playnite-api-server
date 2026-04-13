@@ -44,6 +44,33 @@ namespace PlayniteApiServer.Server
             var req = http.Request;
             var resp = http.Response;
 
+            // DNS-rebinding defense: when bound to loopback, reject Host
+            // headers that don't resolve to a loopback name. Without this,
+            // a page at attacker.com (whose DNS briefly resolves to 127.0.0.1)
+            // could issue same-origin requests to this server. Done before
+            // CORS so we don't advertise anything to a rebinding origin.
+            if (IsLoopbackBind(settings.BindAddress) && !IsAllowedLoopbackHost(req.Url.Host))
+            {
+                resp.StatusCode = 421;
+                resp.ContentLength64 = 0;
+                return;
+            }
+
+            // CORS — every response gets these headers so cross-origin
+            // callers can read the body.  Loopback-only, so wildcard is fine.
+            resp.AddHeader("Access-Control-Allow-Origin", "*");
+            resp.AddHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+            resp.AddHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, If-None-Match");
+            resp.AddHeader("Access-Control-Expose-Headers", "ETag");
+
+            // Preflight: return 204 immediately, before auth / routing.
+            if (string.Equals(req.HttpMethod, "OPTIONS", StringComparison.OrdinalIgnoreCase))
+            {
+                resp.StatusCode = 204;
+                resp.ContentLength64 = 0;
+                return;
+            }
+
             try
             {
                 var pathSegments = SplitPath(req.Url.AbsolutePath);
@@ -128,6 +155,23 @@ namespace PlayniteApiServer.Server
                 logger.Error(ex, "Unhandled exception in request " + req.HttpMethod + " " + req.Url.AbsolutePath + " (errorId=" + errorId + ")");
                 WriteError(resp, 500, "internal", "Internal server error (id=" + errorId + ").");
             }
+        }
+
+        private static bool IsLoopbackBind(string bindAddress)
+        {
+            if (string.IsNullOrEmpty(bindAddress)) return true; // default = loopback
+            return bindAddress == "127.0.0.1"
+                || bindAddress == "::1"
+                || bindAddress.StartsWith("127.", StringComparison.Ordinal)
+                || string.Equals(bindAddress, "localhost", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsAllowedLoopbackHost(string host)
+        {
+            if (string.IsNullOrEmpty(host)) return false;
+            return string.Equals(host, "127.0.0.1", StringComparison.Ordinal)
+                || string.Equals(host, "::1", StringComparison.Ordinal)
+                || string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsReadMethod(string method)
