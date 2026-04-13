@@ -25,7 +25,7 @@ namespace PlayniteApiServer.Server.OpenApi
                 {
                     ["title"] = title,
                     ["version"] = version,
-                    ["description"] = "Read/write access to the local Playnite library. All endpoints (except the documentation routes) require a Bearer token configured in the plugin settings; non-GET requests additionally require the EnableWrites toggle.",
+                    ["description"] = "Read/write access to the local Playnite library. All endpoints (except the documentation routes) require a Bearer token configured in the plugin settings. Each token carries a set of scopes — 'read' allows GET/HEAD, 'write' also allows POST/PUT/PATCH/DELETE.",
                 },
                 ["servers"] = new JArray(
                     new JObject { ["url"] = "/" }
@@ -91,9 +91,23 @@ namespace PlayniteApiServer.Server.OpenApi
             {
                 op["summary"] = route.Summary;
             }
-            if (!string.IsNullOrEmpty(route.Description))
+            var description = route.Description ?? "";
+            if (!route.AllowAnonymous)
             {
-                op["description"] = route.Description;
+                var scope = IsReadMethod(route.Method) ? "read" : "write";
+                var suffix = "Requires `" + scope + "` scope.";
+                if (description.Length > 0)
+                {
+                    description += "\n\n" + suffix;
+                }
+                else
+                {
+                    description = suffix;
+                }
+            }
+            if (description.Length > 0)
+            {
+                op["description"] = description;
             }
 
             // Parameters: auto-infer path params from {name} placeholders,
@@ -294,6 +308,13 @@ namespace PlayniteApiServer.Server.OpenApi
                 },
             };
             return entry;
+        }
+
+        private static bool IsReadMethod(string method)
+        {
+            return string.Equals(method, "GET", System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(method, "HEAD", System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(method, "OPTIONS", System.StringComparison.OrdinalIgnoreCase);
         }
 
         // ─── tags ───────────────────────────────────────────────────────
