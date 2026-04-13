@@ -37,7 +37,7 @@ There is no automated test suite and no test project. Verification for changes t
 Three files you need to understand before touching request handling:
 
 - **`ApiServer.cs`** — owns an `HttpListener` lifecycle, a dedicated accept thread, and a `CountdownEvent` that bounds the shutdown wait to ~2s. Request dispatch is handed to the thread pool. The stop path is deliberate: seed the countdown, wait bounded, then close. Don't wait unbounded — Playnite's shutdown must not be blocked by in-flight requests.
-- **`Router.cs`** — dispatch table + pipeline. The flow is `route match → auth → write-gate → handler → exception translation`, in that order. Routes flagged `AllowAnonymous` skip both auth and the write-gate. Settings are re-read on every request (`settingsAccessor()`) so token and `EnableWrites` changes take effect without a listener restart. Unauthenticated requests to unknown paths return 404, not 401 — this is intentional and documented in the design spec.
+- **`Router.cs`** — dispatch table + pipeline. The flow is `route match → auth → scope check → handler → exception translation`, in that order. Routes flagged `AllowAnonymous` skip both auth and the scope check. Settings are re-read on every request (`settingsAccessor()`) so token-list and scope changes take effect without a listener restart. Unauthenticated requests to unknown paths return 404, not 401 — this is intentional and documented in the design spec.
 - **`Route.cs`** — routing data (method/segments/handler/pathTemplate) **and** optional OpenAPI metadata (summary/description/tags/parameters/requestBody/responses/AllowAnonymous). One class carries both because the OpenAPI builder walks the same list the router uses for dispatch; keeping them together avoids a parallel store. The mutability split is explicit: routing properties are `{ get; }`, metadata properties are `{ get; set; }`.
 
 ### Route registration and OpenAPI
@@ -86,7 +86,7 @@ Request handlers run on thread-pool threads. Playnite's database mutations must 
 
 - **Loopback only** by default (`BindAddress = "127.0.0.1"`). The `PluginSettings` model exposes `BindAddress` but v1 keeps it loopback — if that ever changes, the 401→404/405 dispatch behavior and the docs-route auth carve-out need a security review first.
 - **Bearer token** on every non-anonymous route, compared with `TokenGen.ConstantTimeEquals`. Tokens are plugin-settings scalars (`PluginSettings.Token`), not secrets in source. Never log the token.
-- **Write-gate**: `PluginSettings.EnableWrites` gates all non-GET requests regardless of token validity. The bearer check runs first, then the write-gate.
+- **Scope check**: Each `ApiToken` carries a `Scopes` list. `GET`/`HEAD` requests require `read` (or `write`, which implies `read`); every other method requires `write`. Scope failures return `403 forbidden` with `Token lacks required scope: <scope>.`.
 
 ## When adding a new route
 

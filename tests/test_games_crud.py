@@ -2,8 +2,8 @@
 
 Each test creates at least one game with a __test__-prefixed name and
 either deletes it manually (for the delete tests) or tracks it in the
-created_games fixture for teardown. If Enable write operations is off in
-plugin settings, write tests skip with a clear message instead of failing.
+created_games fixture for teardown. If the configured token lacks the write
+scope, write tests skip with a clear message instead of failing.
 """
 import uuid
 
@@ -17,12 +17,13 @@ def _test_name(suffix):
 
 
 def _skip_if_writes_disabled(response):
+    """Skip when the configured token lacks the write scope."""
     if response.status_code == 403:
         body = response.json()
-        if body.get("error") == "writes_disabled":
+        if body.get("error") == "forbidden" and "scope" in body.get("message", "").lower():
             pytest.skip(
-                "Writes are disabled in plugin settings. "
-                "Enable 'Enable write operations' to run CRUD tests."
+                "Configured token lacks the write scope. "
+                "Use a token with read+write to run CRUD tests."
             )
 
 

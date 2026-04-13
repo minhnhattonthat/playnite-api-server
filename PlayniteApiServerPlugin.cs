@@ -194,7 +194,7 @@ namespace PlayniteApiServer
                 .Body(OpenApiSchemas.Schemas.GameCreate, "Minimum: name")
                 .Response(201, "Created", OpenApiSchemas.Schemas.Game)
                 .Response(400, "Validation error", OpenApiSchemas.Schemas.Error)
-                .Response(403, "Writes disabled in plugin settings", OpenApiSchemas.Schemas.Error);
+                .Response(403, "Token lacks required scope", OpenApiSchemas.Schemas.Error);
 
             router.Add("GET", "/games/{id}", games.Get)
                 .Summary("Get a game by id")
@@ -209,7 +209,7 @@ namespace PlayniteApiServer
                 .Body(OpenApiSchemas.Schemas.Game, "Subset of Game properties to update")
                 .Response(200, "Updated game", OpenApiSchemas.Schemas.Game)
                 .Response(400, "Invalid field or JSON", OpenApiSchemas.Schemas.Error)
-                .Response(403, "Writes disabled in plugin settings", OpenApiSchemas.Schemas.Error)
+                .Response(403, "Token lacks required scope", OpenApiSchemas.Schemas.Error)
                 .Response(404, "Game not found", OpenApiSchemas.Schemas.Error)
                 .Response(409, "Foreign key references unknown id", OpenApiSchemas.Schemas.Error);
 
@@ -217,7 +217,7 @@ namespace PlayniteApiServer
                 .Summary("Delete a game")
                 .Tags("games")
                 .Response(204, "Deleted")
-                .Response(403, "Writes disabled in plugin settings", OpenApiSchemas.Schemas.Error)
+                .Response(403, "Token lacks required scope", OpenApiSchemas.Schemas.Error)
                 .Response(404, "Game not found", OpenApiSchemas.Schemas.Error);
 
             // ─── Game media ────────────────────────────────────────────────
@@ -287,7 +287,7 @@ namespace PlayniteApiServer
                 .Body(OpenApiSchemas.Schemas.NamedItemCreate, "Minimum: name")
                 .Response(201, "Created", itemSchemaRef)
                 .Response(400, "Validation error", OpenApiSchemas.Schemas.Error)
-                .Response(403, "Writes disabled in plugin settings", OpenApiSchemas.Schemas.Error);
+                .Response(403, "Token lacks required scope", OpenApiSchemas.Schemas.Error);
 
             router.Add("GET", prefix + "/{id}", c.Get)
                 .Summary("Get a " + singular + " by id")
@@ -301,14 +301,14 @@ namespace PlayniteApiServer
                 .Body(OpenApiSchemas.Schemas.NamedItemCreate, "Only the 'name' field is patchable")
                 .Response(200, "Updated", itemSchemaRef)
                 .Response(400, "Validation error", OpenApiSchemas.Schemas.Error)
-                .Response(403, "Writes disabled in plugin settings", OpenApiSchemas.Schemas.Error)
+                .Response(403, "Token lacks required scope", OpenApiSchemas.Schemas.Error)
                 .Response(404, singular + " not found", OpenApiSchemas.Schemas.Error);
 
             router.Add("DELETE", prefix + "/{id}", c.Delete)
                 .Summary("Delete a " + singular)
                 .Tags(tag)
                 .Response(204, "Deleted")
-                .Response(403, "Writes disabled in plugin settings", OpenApiSchemas.Schemas.Error)
+                .Response(403, "Token lacks required scope", OpenApiSchemas.Schemas.Error)
                 .Response(404, singular + " not found", OpenApiSchemas.Schemas.Error);
         }
     }
