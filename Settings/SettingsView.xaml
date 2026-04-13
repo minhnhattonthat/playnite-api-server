@@ -3,8 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:PlayniteApiServer.Settings"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="520">
+             d:DesignHeight="420" d:DesignWidth="640">
     <StackPanel Margin="20">
         <TextBlock Text="Playnite API Server"
                    FontSize="18" FontWeight="Bold" Margin="0,0,0,4" />
@@ -13,24 +14,65 @@
 
         <TextBlock Text="Port" Margin="0,0,0,4" />
         <TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}"
-                 Width="120" HorizontalAlignment="Left" Margin="0,0,0,12" />
+                 Width="120" HorizontalAlignment="Left" Margin="0,0,0,16" />
 
-        <TextBlock Text="Bearer Token" Margin="0,0,0,4" />
-        <DockPanel LastChildFill="True" Margin="0,0,0,12">
-            <Button Content="Regenerate"
-                    Command="{Binding RegenerateTokenCommand}"
-                    DockPanel.Dock="Right"
-                    Margin="8,0,0,0"
-                    Padding="12,4" />
-            <TextBox Text="{Binding Token, UpdateSourceTrigger=PropertyChanged}"
-                     FontFamily="Consolas" />
-        </DockPanel>
+        <TextBlock Text="API Tokens" FontWeight="Bold" Margin="0,0,0,4" />
+        <TextBlock TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,8"
+                   Text="Each token is a separate bearer credential. Scope 'read' allows GET/HEAD; 'read+write' also allows POST/PUT/PATCH/DELETE. Delete a token to revoke it immediately." />
 
-        <CheckBox Content="Enable write operations (POST / PATCH / DELETE)"
-                  IsChecked="{Binding EnableWrites}"
-                  Margin="0,4,0,12" />
+        <DataGrid ItemsSource="{Binding Tokens}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  RowHeight="32"
+                  Margin="0,0,0,8">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name"
+                                    Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="160" />
+                <DataGridTemplateColumn Header="Scope" Width="140">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{x:Static local:ApiTokenRow.ScopeChoices}"
+                                      SelectedItem="{Binding ScopeChoice, UpdateSourceTrigger=PropertyChanged}"
+                                      Margin="0,2" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Token"
+                                    Binding="{Binding Value}"
+                                    Width="*"
+                                    IsReadOnly="True"
+                                    FontFamily="Consolas" />
+                <DataGridTemplateColumn Header="" Width="90">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Regenerate"
+                                    Command="{Binding RegenerateCommand}"
+                                    Margin="2" Padding="6,2" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="" Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Delete"
+                                    Command="{Binding DeleteCommand}"
+                                    Margin="2" Padding="6,2" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Button Content="Add Token"
+                Command="{Binding AddTokenCommand}"
+                HorizontalAlignment="Left"
+                Padding="12,4" Margin="0,0,0,12" />
 
         <TextBlock TextWrapping="Wrap" Opacity="0.7"
-                   Text="The listener binds to http://127.0.0.1:{port}/ only. Changing the token or write flag takes effect immediately. Changing the port restarts the listener in place — no Playnite restart required." />
+                   Text="The listener binds to http://127.0.0.1:{port}/ only. Token-list changes take effect immediately. Changing the port restarts the listener in place — no Playnite restart required." />
     </StackPanel>
 </UserControl>
