@@ -12,10 +12,10 @@ namespace PlayniteApiServer.Server
 {
     /// <summary>
     /// Owns the dispatch table and per-request pipeline:
-    /// route match → auth → handler → exception translation.
-    /// Routes flagged AllowAnonymous skip the auth + write-gate steps.
+    /// route match → auth → scope check → handler → exception translation.
+    /// Routes flagged AllowAnonymous skip auth + scope checks.
     /// The router reads the live PluginSettings on every request so that
-    /// token and EnableWrites changes take effect without a listener restart.
+    /// token list and scope changes take effect without a listener restart.
     /// </summary>
     internal sealed class Router
     {
@@ -121,21 +121,22 @@ namespace PlayniteApiServer.Server
                     return;
                 }
 
-                // 4. Auth + write-gate, skipped for anonymous routes.
+                // 4. Auth + scope check, skipped for anonymous routes.
                 if (!methodMatch.AllowAnonymous)
                 {
-                    var expected = settings.Token ?? "";
                     var provided = ExtractBearerToken(req);
-                    if (string.IsNullOrEmpty(expected) || !TokenGen.ConstantTimeEquals(provided, expected))
+                    var token = FindToken(settings.Tokens, provided);
+                    if (token == null)
                     {
                         resp.AddHeader("WWW-Authenticate", "Bearer");
                         WriteError(resp, 401, "unauthorized", "Missing or invalid bearer token.");
                         return;
                     }
 
-                    if (!settings.EnableWrites && !IsReadMethod(methodMatch.Method))
+                    var required = RequiredScope(methodMatch.Method);
+                    if (!Allows(token, required))
                     {
-                        WriteError(resp, 403, "writes_disabled", "Write operations are disabled in plugin settings.");
+                        WriteError(resp, 403, "forbidden", "Token lacks required scope: " + required + ".");
                         return;
                     }
                 }
@@ -310,6 +311,42 @@ namespace PlayniteApiServer.Server
                 case 503: return "unavailable";
                 default:  return "error";
             }
+        }
+
+        // GET/HEAD → "read"; everything else → "write". Route-level
+        // overrides would plug in here; none defined today.
+        private static string RequiredScope(string method)
+        {
+            return IsReadMethod(method) ? "read" : "write";
+        }
+
+        // "write" implies "read". For any other required scope, exact match.
+        private static bool Allows(ApiToken token, string required)
+        {
+            if (required == "read")
+            {
+                return token.Scopes.Contains("read") || token.Scopes.Contains("write");
+            }
+            return token.Scopes.Contains(required);
+        }
+
+        // Walk the token list with constant-time value comparison. Returns
+        // matching ApiToken or null. Short-circuits on empty input to avoid
+        // matching a blank-valued entry against a missing header. Walks the
+        // whole list on a match to keep timing uniform across list position —
+        // token counts are single-digit so the cost is negligible.
+        private static ApiToken FindToken(IReadOnlyList<ApiToken> tokens, string provided)
+        {
+            if (string.IsNullOrEmpty(provided)) return null;
+            ApiToken match = null;
+            foreach (var t in tokens)
+            {
+                if (TokenGen.ConstantTimeEquals(provided, t.Value ?? "") && match == null)
+                {
+                    match = t;
+                }
+            }
+            return match;
         }
     }
 }
