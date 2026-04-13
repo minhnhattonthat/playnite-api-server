@@ -24,6 +24,7 @@
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
+                  SelectionUnit="Cell"
                   HeadersVisibility="Column"
                   GridLinesVisibility="Horizontal"
                   RowHeight="32"
@@ -41,11 +42,19 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Token"
-                                    Binding="{Binding Value}"
-                                    Width="*"
-                                    IsReadOnly="True"
-                                    FontFamily="Consolas" />
+                <DataGridTemplateColumn Header="Token" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding Value, Mode=OneWay}"
+                                     IsReadOnly="True"
+                                     FontFamily="Consolas"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     VerticalAlignment="Center"
+                                     Padding="4,0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="" Width="90">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
