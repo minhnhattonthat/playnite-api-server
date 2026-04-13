@@ -332,18 +332,20 @@ namespace PlayniteApiServer.Server
 
         // Walk the token list with constant-time value comparison. Returns
         // matching ApiToken or null. Short-circuits on empty input to avoid
-        // matching a blank-valued entry against a missing header. Walks the
-        // whole list on a match to keep timing uniform across list position —
-        // token counts are single-digit so the cost is negligible.
+        // matching a blank-valued entry against a missing header. We don't
+        // break on first match — uniform timing across list position matters
+        // for a security-sensitive lookup, and the `match ?? t` expression
+        // ensures ConstantTimeEquals runs on every element. Token counts are
+        // single-digit, so the cost is negligible.
         private static ApiToken FindToken(IReadOnlyList<ApiToken> tokens, string provided)
         {
             if (string.IsNullOrEmpty(provided)) return null;
             ApiToken match = null;
             foreach (var t in tokens)
             {
-                if (TokenGen.ConstantTimeEquals(provided, t.Value ?? "") && match == null)
+                if (TokenGen.ConstantTimeEquals(provided, t.Value ?? ""))
                 {
-                    match = t;
+                    match = match ?? t;
                 }
             }
             return match;

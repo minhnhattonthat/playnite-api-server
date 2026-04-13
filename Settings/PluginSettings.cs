@@ -17,15 +17,16 @@ namespace PlayniteApiServer.Settings
 
         public PluginSettings Clone()
         {
+            var source = Tokens ?? Enumerable.Empty<ApiToken>();
             return new PluginSettings
             {
                 Port = Port,
                 BindAddress = BindAddress,
-                Tokens = Tokens.Select(t => new ApiToken
+                Tokens = source.Select(t => new ApiToken
                 {
                     Name = t.Name,
                     Value = t.Value,
-                    Scopes = new List<string>(t.Scopes),
+                    Scopes = t.Scopes != null ? new List<string>(t.Scopes) : new List<string>(),
                 }).ToList(),
             };
         }
