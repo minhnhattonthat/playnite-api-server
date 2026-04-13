@@ -55,7 +55,7 @@ namespace PlayniteApiServer.Server.OpenApi
             ["required"] = new JArray("error", "message"),
             ["properties"] = new JObject
             {
-                ["error"]   = StringProp("Short error code (e.g. \"not_found\", \"writes_disabled\")"),
+                ["error"]   = StringProp("Short error code (e.g. \"not_found\", \"forbidden\")"),
                 ["message"] = StringProp("Human-readable description"),
             },
         };

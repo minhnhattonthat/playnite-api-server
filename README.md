@@ -22,7 +22,7 @@ A [Playnite](https://playnite.link/) generic plugin that exposes your local game
 - **Game media endpoint** that streams icon / cover / background image bytes
 - **Health check** with plugin version and per-collection counts
 - **Bearer token auth** with constant-time comparison
-- **Write-gate toggle** — flip one setting to make the whole API read-only without restarting
+- **Per-token scopes** — mint `read`-only or `read+write` tokens independently; deleting a token revokes it immediately
 - **Swagger UI at `/docs`** — browse every endpoint, Authorize once, Try-it-out against your real library
 - **OpenAPI 3.0.3 document at `/openapi.json`** for client code generation or machine-readable docs
 - **Loopback-only by default** — nothing is exposed to the network until you explicitly do it
@@ -50,7 +50,7 @@ The project is .NET Framework 4.6.2 with a classic `.csproj`. No NuGet, no packa
 
 5. Start Playnite. Confirm the plugin loads: **top-left menu → Add-ons → Generic → Playnite API Server**.
 
-The plugin auto-generates a 32-character bearer token on first run.
+The plugin auto-generates a default read+write token on first run. Manage additional tokens — with names and scopes — in the settings dialog.
 
 ## Configuration
 
@@ -59,8 +59,7 @@ Settings live in **Add-ons → Generic → Playnite API Server → Settings**:
 | Setting | Default | Notes |
 | --- | --- | --- |
 | **Port** | `8083` | Any port 1024–65535. Changing this restarts the listener in place; no Playnite restart needed. |
-| **Bearer Token** | auto-generated | Minimum 16 characters. The **Regenerate** button creates a fresh cryptographically random token. |
-| **Enable write operations** | on | When off, all non-GET requests return `403 writes_disabled`. Changes apply live. |
+| **API Tokens** | one auto-generated `Default` token with `read+write` | Each token is an independent bearer credential. Scope `read` allows `GET`/`HEAD`; `read+write` also allows `POST`/`PUT`/`PATCH`/`DELETE`. Use the per-row **Regenerate** button to mint a new value, **Delete** to revoke. The **Add Token** button at the bottom mints a fresh entry. All changes apply live. |
 
 **Bind address** is loopback (`127.0.0.1`) and is not in the settings UI. See [Remote access](#remote-access) below for how to expose the service to other devices.
 
@@ -117,10 +116,10 @@ PATCH on `/games/{id}` accepts a subset of Game fields. The full writable allow-
 
 - **Loopback-only by default.** The listener binds `127.0.0.1:8083` until you change it. When bound to loopback, requests with a non-loopback `Host` header are rejected (defense against DNS-rebinding attacks).
 - **Bearer token required on every endpoint except `/docs`, `/openapi.json`, and the Swagger UI asset files.** Missing or wrong token → `401`. The token is compared in constant time.
-- **Write-gate.** `POST`, `PATCH`, and `DELETE` all check the `EnableWrites` setting independently of auth. Flip it off for read-only mode without regenerating the token.
+- **Per-token scopes.** Each bearer credential lives in the settings token list with its own `Scopes`. `GET`/`HEAD` needs `read` (or `write`, which implies `read`); all other methods need `write`. Scope failures return `403 forbidden`. To run read-only, mint a `read` token and hand it out; deleting a token revokes it immediately.
 - **Docs are anonymous on purpose.** The whole point of `/docs` is that a browser can load it without fussing over headers. It advertises the `bearerAuth` scheme so the Swagger UI Authorize button lights up. The docs don't leak any data — they describe the API surface, which is already visible to anyone who can reach the port.
 
-> ⚠️ **A valid bearer token with writes enabled is effectively remote code execution.** `PATCH /games/{id}` accepts `preScript`, `postScript`, and `gameStartedScript` — Playnite runs those as PowerShell the next time the user launches (or closes) that game. An attacker who holds a read-write token can overwrite any game's script fields and wait. Treat the token as RCE-equivalent: never paste it into an untrusted channel, rotate it if in doubt, and turn `EnableWrites` off whenever the client devices don't need to mutate the library.
+> ⚠️ **A valid bearer token with writes enabled is effectively remote code execution.** `PATCH /games/{id}` accepts `preScript`, `postScript`, and `gameStartedScript` — Playnite runs those as PowerShell the next time the user launches (or closes) that game. An attacker who holds a read-write token can overwrite any game's script fields and wait. Treat a read-write token as RCE-equivalent: never paste it into an untrusted channel, rotate it if in doubt, and prefer a `read`-only token whenever the client devices don't need to mutate the library.
 
 ## Remote access
 
@@ -161,9 +160,14 @@ If you want the listener itself to bind to your LAN IP, a Tailscale IP, or `0.0.
    ```json
    {
      "Port": 8083,
-     "Token": "...",
-     "EnableWrites": true,
-     "BindAddress": "100.64.0.5"
+     "BindAddress": "100.64.0.5",
+     "Tokens": [
+       {
+         "Name": "Default",
+         "Value": "...",
+         "Scopes": ["read", "write"]
+       }
+     ]
    }
    ```
 
@@ -190,7 +194,7 @@ This is more fragile than Option A because you now have to think about URL ACLs,
 ### Safety checklist before exposing the API anywhere
 
 - [ ] **Regenerate the bearer token** after setting up remote access. The generated default is already random, but if you ever pasted it into a screenshot or chat, rotate it.
-- [ ] **Turn off "Enable write operations"** if the client devices don't need to modify the library. A stolen read-only token costs much less than a stolen read-write one.
+- [ ] **Hand clients a read-only token** when they don't need to modify the library. A stolen read-only token costs much less than a stolen read-write one.
 - [ ] **Don't share the token over unencrypted channels.** Use a password manager, a Tailscale-internal note, or a secret-sharing tool.
 - [ ] **Do not** put the listener directly on the public internet. Not on a port-forwarded router. Not on a public Cloudflare Tunnel hostname. Not via `tailscale funnel`.
 - [ ] **Log the port.** `netstat -ano | findstr :8083` tells you what's actually bound.
@@ -202,7 +206,7 @@ This is more fragile than Option A because you now have to think about URL ACLs,
 | Plugin fails to start, Playnite shows "could not bind to port" | Port in use — change the port in plugin settings, or find the other process with `netstat -ano \| findstr :<port>`. |
 | Plugin fails to start, "Access denied" on non-loopback bind | Windows URL ACL missing — run Playnite as admin, or register via `netsh http add urlacl` (see Option B above). |
 | `401 unauthorized` on every request | Missing/wrong `Authorization: Bearer <token>` header. Regenerate the token in settings if you've lost it — old tokens are not recoverable. |
-| `403 writes_disabled` on POST/PATCH/DELETE | Enable write operations in plugin settings. |
+| `403 forbidden` ("Token lacks required scope: write") on POST/PATCH/DELETE | The token you used has only `read` scope. Use a `read+write` token, or change the token's scope in settings. |
 | `/docs` loads but asset files 404 | The plugin DLL didn't fully deploy. Rebuild with `./build.ps1` with Playnite closed. |
 | Browser shows cert warning via `tailscale serve` | First-time cert issuance can take ~30 seconds. Refresh. |
 
@@ -219,7 +223,7 @@ pip install -r tests/requirements.txt
 **Run:**
 
 1. Start Playnite so the plugin loads and the listener binds.
-2. Make sure **Enable write operations** is ON in the plugin settings (the CRUD tests skip gracefully when it's off, but you get more coverage with it on).
+2. Use a token with `read+write` scope — the CRUD tests skip gracefully on a `read`-only token, but you get more coverage with full write access.
 3. Run from the repo root:
 
    **bash / Git Bash:**

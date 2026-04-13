@@ -15,12 +15,13 @@ def _tag_name(suffix):
 
 
 def _skip_if_writes_disabled(response):
+    """Skip when the configured token lacks the write scope."""
     if response.status_code == 403:
         body = response.json()
-        if body.get("error") == "writes_disabled":
+        if body.get("error") == "forbidden" and "scope" in body.get("message", "").lower():
             pytest.skip(
-                "Writes are disabled in plugin settings. "
-                "Enable 'Enable write operations' to run CRUD tests."
+                "Configured token lacks the write scope. "
+                "Use a token with read+write to run CRUD tests."
             )
 
 
