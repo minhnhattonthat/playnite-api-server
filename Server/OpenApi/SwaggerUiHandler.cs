@@ -21,6 +21,7 @@ namespace PlayniteApiServer.Server.OpenApi
             public const string Css                = "swagger-ui.css";
             public const string BundleJs           = "swagger-ui-bundle.js";
             public const string StandalonePresetJs = "swagger-ui-standalone-preset.js";
+            public const string Favicon            = "favicon.png";
         }
 
         public static void Serve(RequestContext r, string resourceName, string contentType)

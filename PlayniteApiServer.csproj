@@ -105,6 +105,9 @@
     <EmbeddedResource Include="assets\swagger-ui-dist\index.html">
       <LogicalName>index.html</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="icon.png">
+      <LogicalName>favicon.png</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="extension.yaml">

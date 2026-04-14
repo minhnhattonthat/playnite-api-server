@@ -26,7 +26,7 @@ def _skip_if_writes_disabled(response):
 
 
 def test_list_tags(api, base_url):
-    r = api.get(f"{base_url}/tags")
+    r = api.get(f"{base_url}/api/tags")
     assert r.status_code == 200
     items = r.json()
     assert isinstance(items, list)
@@ -37,7 +37,7 @@ def test_list_tags(api, base_url):
 
 def test_create_tag(api, base_url, created_tags):
     name = _tag_name("create")
-    r = api.post(f"{base_url}/tags", json={"name": name})
+    r = api.post(f"{base_url}/api/tags", json={"name": name})
     _skip_if_writes_disabled(r)
     assert r.status_code == 201
     body = r.json()
@@ -48,66 +48,66 @@ def test_create_tag(api, base_url, created_tags):
 
 def test_get_tag_after_create(api, base_url, created_tags):
     name = _tag_name("get")
-    r = api.post(f"{base_url}/tags", json={"name": name})
+    r = api.post(f"{base_url}/api/tags", json={"name": name})
     _skip_if_writes_disabled(r)
     tid = r.json()["id"]
     created_tags.append(tid)
 
-    r = api.get(f"{base_url}/tags/{tid}")
+    r = api.get(f"{base_url}/api/tags/{tid}")
     assert r.status_code == 200
     assert r.json()["name"] == name
 
 
 def test_patch_tag_name(api, base_url, created_tags):
     original = _tag_name("rename-from")
-    r = api.post(f"{base_url}/tags", json={"name": original})
+    r = api.post(f"{base_url}/api/tags", json={"name": original})
     _skip_if_writes_disabled(r)
     tid = r.json()["id"]
     created_tags.append(tid)
 
     new_name = _tag_name("rename-to")
-    r = api.patch(f"{base_url}/tags/{tid}", json={"name": new_name})
+    r = api.patch(f"{base_url}/api/tags/{tid}", json={"name": new_name})
     assert r.status_code == 200
     assert r.json()["name"] == new_name
 
 
 def test_patch_rejects_unknown_field(api, base_url, created_tags):
     name = _tag_name("patch-unknown")
-    r = api.post(f"{base_url}/tags", json={"name": name})
+    r = api.post(f"{base_url}/api/tags", json={"name": name})
     _skip_if_writes_disabled(r)
     tid = r.json()["id"]
     created_tags.append(tid)
 
-    r = api.patch(f"{base_url}/tags/{tid}", json={"notAName": "nope"})
+    r = api.patch(f"{base_url}/api/tags/{tid}", json={"notAName": "nope"})
     assert r.status_code == 400
     assert r.json().get("error") == "bad_request"
 
 
 def test_delete_tag(api, base_url):
     name = _tag_name("delete")
-    r = api.post(f"{base_url}/tags", json={"name": name})
+    r = api.post(f"{base_url}/api/tags", json={"name": name})
     _skip_if_writes_disabled(r)
     tid = r.json()["id"]
 
-    r = api.delete(f"{base_url}/tags/{tid}")
+    r = api.delete(f"{base_url}/api/tags/{tid}")
     assert r.status_code == 204
 
-    r = api.get(f"{base_url}/tags/{tid}")
+    r = api.get(f"{base_url}/api/tags/{tid}")
     assert r.status_code == 404
 
 
 def test_create_rejects_empty_name(api, base_url):
-    r = api.post(f"{base_url}/tags", json={"name": ""})
+    r = api.post(f"{base_url}/api/tags", json={"name": ""})
     _skip_if_writes_disabled(r)
     assert r.status_code == 400
 
 
 def test_get_rejects_bad_guid(api, base_url):
-    r = api.get(f"{base_url}/tags/not-a-guid")
+    r = api.get(f"{base_url}/api/tags/not-a-guid")
     assert r.status_code == 400
 
 
 def test_get_nonexistent_tag_returns_404(api, base_url):
     nonexistent = "11111111-2222-3333-4444-555555555555"
-    r = api.get(f"{base_url}/tags/{nonexistent}")
+    r = api.get(f"{base_url}/api/tags/{nonexistent}")
     assert r.status_code == 404

@@ -53,7 +53,7 @@ namespace PlayniteApiServer.Controllers
 
             var name = dto.Name.Trim();
             var item = InvokeOnUi(() => collection.Add(name));
-            r.Response.AddHeader("Location", "/" + LookupController<T>.RoutePrefix(r) + "/" + item.Id);
+            r.Response.AddHeader("Location", r.Request.Url.AbsolutePath.TrimEnd('/') + "/" + item.Id);
             r.WriteJson(201, item);
         }
 
@@ -102,12 +102,6 @@ namespace PlayniteApiServer.Controllers
             InvokeOnUi(() => collection.Remove(id));
             r.Response.StatusCode = 204;
             r.Response.ContentLength64 = 0;
-        }
-
-        private static string RoutePrefix(RequestContext r)
-        {
-            var segments = r.Request.Url.AbsolutePath.Trim('/').Split('/');
-            return segments.Length > 0 ? segments[0] : "";
         }
 
         private TResult InvokeOnUi<TResult>(Func<TResult> fn)

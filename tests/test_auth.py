@@ -3,7 +3,7 @@ import requests
 
 
 def test_missing_token_returns_401(unauth_session, base_url):
-    r = unauth_session.get(f"{base_url}/games")
+    r = unauth_session.get(f"{base_url}/api/games")
     assert r.status_code == 401
     assert r.headers.get("WWW-Authenticate") == "Bearer"
     body = r.json()
@@ -12,7 +12,7 @@ def test_missing_token_returns_401(unauth_session, base_url):
 
 def test_wrong_token_returns_401(base_url):
     r = requests.get(
-        f"{base_url}/games",
+        f"{base_url}/api/games",
         headers={"Authorization": "Bearer definitely-not-the-real-token"},
     )
     assert r.status_code == 401
@@ -34,7 +34,7 @@ def test_unknown_path_with_auth_still_404(api, base_url):
 
 def test_wrong_method_returns_405(api, base_url):
     """Known path, wrong method, valid auth → 405 with Allow header."""
-    r = api.post(f"{base_url}/health")
+    r = api.post(f"{base_url}/api/health")
     assert r.status_code == 405
     allow = r.headers.get("Allow", "")
     assert "GET" in allow

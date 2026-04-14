@@ -9,7 +9,7 @@ EXPECTED_COLLECTIONS = {
 
 
 def test_health_returns_200_with_shape(api, base_url):
-    r = api.get(f"{base_url}/health")
+    r = api.get(f"{base_url}/api/health")
     assert r.status_code == 200
     body = r.json()
     assert body.get("ok") is True
@@ -25,6 +25,6 @@ def test_health_returns_200_with_shape(api, base_url):
 
 
 def test_health_requires_auth(unauth_session, base_url):
-    r = unauth_session.get(f"{base_url}/health")
+    r = unauth_session.get(f"{base_url}/api/health")
     assert r.status_code == 401
     assert r.headers.get("WWW-Authenticate") == "Bearer"

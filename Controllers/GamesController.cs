@@ -153,7 +153,7 @@ namespace PlayniteApiServer.Controllers
                 return game;
             });
 
-            r.Response.AddHeader("Location", "/games/" + created.Id);
+            r.Response.AddHeader("Location", "/api/games/" + created.Id);
             r.WriteJson(201, created);
         }
 

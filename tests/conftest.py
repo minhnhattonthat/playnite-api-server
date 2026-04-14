@@ -78,7 +78,7 @@ def _cleanup(api, base_url):
         page_size = 1000
         while True:
             r = api.get(
-                f"{base_url}/games",
+                f"{base_url}/api/games",
                 params={"limit": page_size, "offset": offset},
             )
             if not r.ok:
@@ -93,7 +93,7 @@ def _cleanup(api, base_url):
                     gid = g.get("id")
                     if gid:
                         try:
-                            api.delete(f"{base_url}/games/{gid}")
+                            api.delete(f"{base_url}/api/games/{gid}")
                         except Exception:
                             pass
             total = body.get("total", 0)
@@ -105,7 +105,7 @@ def _cleanup(api, base_url):
 
     # Tags: lookup collections return the full list, no pagination needed.
     try:
-        r = api.get(f"{base_url}/tags")
+        r = api.get(f"{base_url}/api/tags")
         if r.ok:
             for t in r.json():
                 name = t.get("name") or ""
@@ -113,7 +113,7 @@ def _cleanup(api, base_url):
                     tid = t.get("id")
                     if tid:
                         try:
-                            api.delete(f"{base_url}/tags/{tid}")
+                            api.delete(f"{base_url}/api/tags/{tid}")
                         except Exception:
                             pass
     except Exception as e:
@@ -132,7 +132,7 @@ def created_games(api, base_url):
     yield created
     for gid in created:
         try:
-            api.delete(f"{base_url}/games/{gid}")
+            api.delete(f"{base_url}/api/games/{gid}")
         except Exception:
             pass
 
@@ -144,6 +144,6 @@ def created_tags(api, base_url):
     yield created
     for tid in created:
         try:
-            api.delete(f"{base_url}/tags/{tid}")
+            api.delete(f"{base_url}/api/tags/{tid}")
         except Exception:
             pass

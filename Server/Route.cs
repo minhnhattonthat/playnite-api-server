@@ -18,7 +18,7 @@ namespace PlayniteApiServer.Server
 
         // Runtime authorization flag. When true, Router.Dispatch skips the
         // bearer-token check and the write-gate for this route. Used by the
-        // documentation routes (/docs, /openapi.json, the asset files).
+        // documentation routes (/api/docs, /api/openapi.json, the asset files).
         public bool AllowAnonymous { get; set; }
 
         // Optional OpenAPI documentation metadata. All default to null so

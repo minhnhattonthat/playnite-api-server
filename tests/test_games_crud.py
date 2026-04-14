@@ -29,7 +29,7 @@ def _skip_if_writes_disabled(response):
 
 def test_create_game(api, base_url, created_games):
     name = _test_name("create")
-    r = api.post(f"{base_url}/games", json={"name": name})
+    r = api.post(f"{base_url}/api/games", json={"name": name})
     _skip_if_writes_disabled(r)
     assert r.status_code == 201
     game = r.json()
@@ -40,31 +40,31 @@ def test_create_game(api, base_url, created_games):
 
 def test_get_after_create(api, base_url, created_games):
     name = _test_name("get")
-    r = api.post(f"{base_url}/games", json={"name": name})
+    r = api.post(f"{base_url}/api/games", json={"name": name})
     _skip_if_writes_disabled(r)
     created = r.json()
     created_games.append(created["id"])
 
-    r = api.get(f"{base_url}/games/{created['id']}")
+    r = api.get(f"{base_url}/api/games/{created['id']}")
     assert r.status_code == 200
     assert r.json()["name"] == name
 
 
 def test_patch_favorite(api, base_url, created_games):
     name = _test_name("patch-fav")
-    r = api.post(f"{base_url}/games", json={"name": name})
+    r = api.post(f"{base_url}/api/games", json={"name": name})
     _skip_if_writes_disabled(r)
     created = r.json()
     created_games.append(created["id"])
 
-    r = api.patch(f"{base_url}/games/{created['id']}", json={"favorite": True})
+    r = api.patch(f"{base_url}/api/games/{created['id']}", json={"favorite": True})
     assert r.status_code == 200
     assert r.json().get("favorite") is True
 
 
 def test_patch_multiple_fields(api, base_url, created_games):
     name = _test_name("patch-multi")
-    r = api.post(f"{base_url}/games", json={"name": name})
+    r = api.post(f"{base_url}/api/games", json={"name": name})
     _skip_if_writes_disabled(r)
     created = r.json()
     created_games.append(created["id"])
@@ -74,7 +74,7 @@ def test_patch_multiple_fields(api, base_url, created_games):
         "hidden": False,
         "notes": "integration-test note",
     }
-    r = api.patch(f"{base_url}/games/{created['id']}", json=patch)
+    r = api.patch(f"{base_url}/api/games/{created['id']}", json=patch)
     assert r.status_code == 200
     updated = r.json()
     assert updated.get("favorite") is True
@@ -84,12 +84,12 @@ def test_patch_multiple_fields(api, base_url, created_games):
 
 def test_patch_rejects_unknown_field(api, base_url, created_games):
     name = _test_name("patch-unknown")
-    r = api.post(f"{base_url}/games", json={"name": name})
+    r = api.post(f"{base_url}/api/games", json={"name": name})
     _skip_if_writes_disabled(r)
     created = r.json()
     created_games.append(created["id"])
 
-    r = api.patch(f"{base_url}/games/{created['id']}", json={"bogusField": "nope"})
+    r = api.patch(f"{base_url}/api/games/{created['id']}", json={"bogusField": "nope"})
     assert r.status_code == 400
     body = r.json()
     assert body.get("error") == "bad_request"
@@ -100,14 +100,14 @@ def test_patch_rejects_unknown_foreign_key(api, base_url, created_games):
     """PATCHing a relationship list with a GUID that doesn't exist in the
     target lookup collection returns 409 per ValidateForeignKeys."""
     name = _test_name("patch-fk")
-    r = api.post(f"{base_url}/games", json={"name": name})
+    r = api.post(f"{base_url}/api/games", json={"name": name})
     _skip_if_writes_disabled(r)
     created = r.json()
     created_games.append(created["id"])
 
     # 99999999-... is well-formed but unlikely to match any platform.
     fake = "99999999-9999-9999-9999-999999999999"
-    r = api.patch(f"{base_url}/games/{created['id']}", json={"platformIds": [fake]})
+    r = api.patch(f"{base_url}/api/games/{created['id']}", json={"platformIds": [fake]})
     assert r.status_code == 409
     body = r.json()
     assert body.get("error") == "conflict"
@@ -116,36 +116,36 @@ def test_patch_rejects_unknown_foreign_key(api, base_url, created_games):
 
 def test_delete_game(api, base_url):
     name = _test_name("delete")
-    r = api.post(f"{base_url}/games", json={"name": name})
+    r = api.post(f"{base_url}/api/games", json={"name": name})
     _skip_if_writes_disabled(r)
     game_id = r.json()["id"]
 
-    r = api.delete(f"{base_url}/games/{game_id}")
+    r = api.delete(f"{base_url}/api/games/{game_id}")
     assert r.status_code == 204
 
-    r = api.get(f"{base_url}/games/{game_id}")
+    r = api.get(f"{base_url}/api/games/{game_id}")
     assert r.status_code == 404
 
 
 def test_create_rejects_missing_name(api, base_url):
-    r = api.post(f"{base_url}/games", json={})
+    r = api.post(f"{base_url}/api/games", json={})
     _skip_if_writes_disabled(r)
     assert r.status_code == 400
     assert r.json().get("error") == "bad_request"
 
 
 def test_create_rejects_whitespace_name(api, base_url):
-    r = api.post(f"{base_url}/games", json={"name": "   "})
+    r = api.post(f"{base_url}/api/games", json={"name": "   "})
     _skip_if_writes_disabled(r)
     assert r.status_code == 400
 
 
 def test_get_rejects_bad_guid(api, base_url):
-    r = api.get(f"{base_url}/games/not-a-guid")
+    r = api.get(f"{base_url}/api/games/not-a-guid")
     assert r.status_code == 400
 
 
 def test_get_nonexistent_game_returns_404(api, base_url):
     nonexistent = "11111111-2222-3333-4444-555555555555"
-    r = api.get(f"{base_url}/games/{nonexistent}")
+    r = api.get(f"{base_url}/api/games/{nonexistent}")
     assert r.status_code == 404
