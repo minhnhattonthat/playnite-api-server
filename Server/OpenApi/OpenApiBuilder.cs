@@ -16,7 +16,7 @@ namespace PlayniteApiServer.Server.OpenApi
     {
         private static readonly Regex PathParamRegex = new Regex(@"\{([^}]+)\}", RegexOptions.Compiled);
 
-        public static string Build(IReadOnlyList<Route> routes, string title, string version)
+        public static string Build(IReadOnlyList<Route> routes, string title, string version, string basePath = "/")
         {
             var doc = new JObject
             {
@@ -28,7 +28,7 @@ namespace PlayniteApiServer.Server.OpenApi
                     ["description"] = "Read/write access to the local Playnite library. All endpoints (except the documentation routes) require a Bearer token configured in the plugin settings. Each token carries a set of scopes — 'read' allows GET/HEAD, 'write' also allows POST/PUT/PATCH/DELETE.",
                 },
                 ["servers"] = new JArray(
-                    new JObject { ["url"] = "/" }
+                    new JObject { ["url"] = basePath }
                 ),
                 ["components"] = new JObject
                 {
@@ -42,16 +42,37 @@ namespace PlayniteApiServer.Server.OpenApi
                     },
                     ["schemas"] = OpenApiSchemas.BuildAll(),
                 },
-                ["paths"] = BuildPaths(routes),
+                ["paths"] = BuildPaths(routes, basePath),
                 ["tags"] = BuildTagList(routes),
             };
 
             return JsonConvert.SerializeObject(doc, Formatting.Indented);
         }
 
+        // Strip the server base path from a route template. Paths in the OpenAPI
+        // spec are relative to servers[0].url, so a route registered as
+        // "/api/games" becomes "/games" when the server URL is "/api".
+        private static string StripBasePath(string template, string basePath)
+        {
+            if (string.IsNullOrEmpty(basePath) || basePath == "/")
+            {
+                return template;
+            }
+            if (template == basePath)
+            {
+                return "/";
+            }
+            var withSlash = basePath.EndsWith("/") ? basePath : basePath + "/";
+            if (template.StartsWith(withSlash))
+            {
+                return "/" + template.Substring(withSlash.Length);
+            }
+            return template;
+        }
+
         // ─── path building ───────────────────────────────────────────────
 
-        private static JObject BuildPaths(IReadOnlyList<Route> routes)
+        private static JObject BuildPaths(IReadOnlyList<Route> routes, string basePath)
         {
             var paths = new JObject();
 
@@ -73,7 +94,7 @@ namespace PlayniteApiServer.Server.OpenApi
                 {
                     pathItem[route.Method.ToLowerInvariant()] = BuildOperation(route);
                 }
-                paths[template] = pathItem;
+                paths[StripBasePath(template, basePath)] = pathItem;
             }
 
             return paths;

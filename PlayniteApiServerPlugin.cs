@@ -248,7 +248,7 @@ namespace PlayniteApiServer
             // and capture the JSON in a closure for the handler. Each call to
             // BuildRouter produces an independent openApiJson binding;
             // RestartServer discards the old router so this stays correct.
-            var openApiJson = OpenApiBuilder.Build(router.Routes, "Playnite API Server", PluginVersion());
+            var openApiJson = OpenApiBuilder.Build(router.Routes, "Playnite API Server", PluginVersion(), "/api");
 
             router.Add("GET", "/api/openapi.json", r => OpenApiHandler.Serve(r, openApiJson))
                 .AllowAnonymous();

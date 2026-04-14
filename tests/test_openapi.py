@@ -26,6 +26,7 @@ def test_has_info_block(spec):
 def test_has_servers_block(spec):
     servers = spec.get("servers")
     assert isinstance(servers, list) and len(servers) > 0
+    assert servers[0].get("url") == "/api"
 
 
 # ─── Components ───────────────────────────────────────────────────────
@@ -53,24 +54,26 @@ def test_has_bearer_security_scheme(spec):
 
 
 def test_has_expected_paths(spec):
+    # Paths are relative to servers[0].url (= "/api"), so the entries here
+    # are unprefixed. Full URL is "/api" + path.
     paths = spec.get("paths", {})
     expected = {
-        "/api/health",
-        "/api/games",
-        "/api/games/{id}",
-        "/api/games/{id}/media/{kind}",
-        "/api/platforms", "/api/platforms/{id}",
-        "/api/genres", "/api/genres/{id}",
-        "/api/companies", "/api/companies/{id}",
-        "/api/features", "/api/features/{id}",
-        "/api/categories", "/api/categories/{id}",
-        "/api/tags", "/api/tags/{id}",
-        "/api/series", "/api/series/{id}",
-        "/api/ageratings", "/api/ageratings/{id}",
-        "/api/regions", "/api/regions/{id}",
-        "/api/sources", "/api/sources/{id}",
-        "/api/completionstatuses", "/api/completionstatuses/{id}",
-        "/api/emulators", "/api/emulators/{id}",
+        "/health",
+        "/games",
+        "/games/{id}",
+        "/games/{id}/media/{kind}",
+        "/platforms", "/platforms/{id}",
+        "/genres", "/genres/{id}",
+        "/companies", "/companies/{id}",
+        "/features", "/features/{id}",
+        "/categories", "/categories/{id}",
+        "/tags", "/tags/{id}",
+        "/series", "/series/{id}",
+        "/ageratings", "/ageratings/{id}",
+        "/regions", "/regions/{id}",
+        "/sources", "/sources/{id}",
+        "/completionstatuses", "/completionstatuses/{id}",
+        "/emulators", "/emulators/{id}",
     }
     missing = expected - set(paths.keys())
     assert not missing, f"Missing paths: {missing}"
@@ -98,7 +101,7 @@ EXPECTED_GAMES_PARAMS = {
 
 
 def test_games_list_has_21_parameters(spec):
-    op = spec["paths"]["/api/games"]["get"]
+    op = spec["paths"]["/games"]["get"]
     params = op.get("parameters", [])
     names = {p["name"] for p in params}
     assert names == EXPECTED_GAMES_PARAMS, (
@@ -110,12 +113,16 @@ def test_games_list_has_21_parameters(spec):
 # ─── Security carve-out ───────────────────────────────────────────────
 
 
+# Unprefixed because spec paths are relative to servers[0].url = "/api".
+# Documentation routes are currently registered after the spec is built
+# (so they don't appear in paths at all), but this set is correct if that
+# ever changes.
 ANONYMOUS_PATHS = {
-    "/api/docs", "/api/openapi.json",
-    "/api/swagger-ui.css",
-    "/api/swagger-ui-bundle.js",
-    "/api/swagger-ui-standalone-preset.js",
-    "/api/favicon.png",
+    "/docs", "/openapi.json",
+    "/swagger-ui.css",
+    "/swagger-ui-bundle.js",
+    "/swagger-ui-standalone-preset.js",
+    "/favicon.png",
 }
 
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options"}
